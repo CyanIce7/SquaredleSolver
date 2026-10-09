@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import typing
 from trie import Trie
 
+word_list = []
+
 
 class SquaredleGraph(nx.Graph):
     """
@@ -46,6 +48,8 @@ def load_trie():
     """
     Create a trie with the word list.
     """
+    global word_list
+
     with open("word_list.txt", 'r') as word_list_file:
         word_list = [str(i)[:-1] for i in word_list_file]
 
@@ -71,6 +75,7 @@ squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
 print(squaredle_graph.coords_to_letters)
 trie = load_trie()
 print(trie)
+print(word_list)
 
 # blah blah
 # bees

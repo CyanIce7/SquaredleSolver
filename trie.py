@@ -47,9 +47,6 @@ class Trie:
         """
         Insert a new key (three-letter string) into this Trie.
         """
-        if len(key) > 3:
-            key = key[0:3]
-
         curr = self.root
         for c in key:
             index = ord(c) - ord('a')
@@ -62,9 +59,6 @@ class Trie:
         """
         Return whether this key (three-letter string) exists in the Trie.
         """
-        if len(key) > 3:
-            key = key[0:3]
-
         curr = self.root
         for c in key:
             index = ord(c) - ord('a')
@@ -77,9 +71,6 @@ class Trie:
         """
         Return whether this prefix exists in the Trie.
         """
-        if len(prefix) > 3:
-            return False
-
         curr = self.root
         for c in prefix:
             index = ord(c) - ord('a')
