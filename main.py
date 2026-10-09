@@ -54,3 +54,6 @@ DIRECTIONS = [
 squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
 
 print(squaredle_graph.coords_to_letters)
+
+# blah blah
+# bees
