@@ -5,6 +5,7 @@ Squaredle solver
 import networkx as nx
 import matplotlib.pyplot as plt
 import typing
+from trie import Trie
 
 
 class SquaredleGraph(nx.Graph):
@@ -41,9 +42,23 @@ class SquaredleGraph(nx.Graph):
                             self.add_edge(node, adjacent_node)
 
 
-SQUAREDLE_GRID = [["U", "T", "S"],
-                  ["D", "H", "E"],
-                  ["R", "O", "N"]]
+def load_trie():
+    """
+    Create a trie with the word list.
+    """
+    with open("word_list.txt", 'r') as word_list_file:
+        word_list = [str(i)[:-1] for i in word_list_file]
+
+    trie = Trie()
+    for word in word_list:
+        trie.insert(word)
+
+    return trie
+
+
+SQUAREDLE_GRID = [["u", "t", "s"],
+                  ["d", "h", "e"],
+                  ["r", "o", "n"]]
 
 DIRECTIONS = [
     (-1, -1), (-1, 0), (-1, 1),
@@ -54,6 +69,8 @@ DIRECTIONS = [
 squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
 
 print(squaredle_graph.coords_to_letters)
+trie = load_trie()
+print(trie)
 
 # blah blah
 # bees
