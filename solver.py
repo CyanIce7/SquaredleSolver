@@ -82,6 +82,7 @@ class SquaredleGraph(nx.Graph):
         curr_string += self.coords_to_letters[node]
         # print(curr_string, [self.coords_to_letters[i] for i in visited])
         self.recursive_searches += 1
+        # print(curr_string)
 
         if len(curr_string) >= MIN_WORD_LENGTH:
             if curr_string[-1] == "?":
@@ -156,6 +157,8 @@ SQUAREDLE_GRID_3 = [["a", "m", "y", "u", "m"],
                     ["n", "c", "i", "r", "y"],
                     ["t", "h", "c", "b", "r"],
                     ["e", "d", "i", "m", "e"]]
+
+MEME_GRID = [["?", "?"], ["?", "?"]]
 
 DIRECTIONS = [
     (-1, -1), (-1, 0), (-1, 1),

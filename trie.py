@@ -98,7 +98,7 @@ class Trie:
                 for child in curr.children:
                     if child is not None:
                         potential_letters.append(child)
-                return any(self.search(prefix[:letter_index] + child.letter + prefix[(letter_index + 1):]) for child in potential_letters)
+                return len(potential_letters) > 0
             else:
                 index = ord(c) - ord('a')
                 if curr.children[index] is None:
@@ -120,6 +120,8 @@ if __name__ == "__main__":
     print(trie.search("h?ngover"))
     print(trie.search("su?"))
     print(trie.search("s?d"))
+    print(trie.search("?un"))
+    print(trie.is_prefix("?"))
 
 
 

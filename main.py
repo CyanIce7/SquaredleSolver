@@ -55,7 +55,7 @@ def check_valid_grid(grid_text: str) -> bool:
 
     # Check whether valid characters are inputted
     for c in grid_text:
-        if not (c.isalpha() or c == "/" or c == "-"):
+        if not (c.isalpha() or c == "/" or c == "-" or c == "?"):
             return False
 
     return True
@@ -71,8 +71,8 @@ def grid_text_to_list(grid_text: str) -> list[list[str]]:
     grid = [[]]
     curr_row = 0
     for char in grid_text:
-        if char == "-":
-            grid[curr_row].append("-")  # type: ignore
+        if char in {"-", "?"}:
+            grid[curr_row].append(char)  # type: ignore
         elif char == "/":
             grid.append([])
             curr_row += 1
