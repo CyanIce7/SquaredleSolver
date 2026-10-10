@@ -5,6 +5,8 @@ Squaredle solver
 import networkx as nx
 from trie import Trie
 import timeit
+import pickle
+import os
 
 word_list = []
 
@@ -93,8 +95,7 @@ class SquaredleGraph(nx.Graph):
 
         return self.valid_words
 
-
-def load_trie():
+def generate_trie():
     """
     Load the word list and create a Trie with it.
     """
@@ -147,7 +148,7 @@ DIRECTIONS = [
 
 t1 = timeit.default_timer()
 squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_MASSIVE)
-trie = load_trie()
+trie = generate_trie()
 squaredle_graph.add_trie(trie)
 squaredle_graph.find_words()
 t2 = timeit.default_timer()
