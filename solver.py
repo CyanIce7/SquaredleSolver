@@ -79,8 +79,8 @@ class SquaredleGraph(nx.Graph):
             visited = set()
 
         visited.add(node)
-        curr_string += self.coords_to_letters[node]
-        # print(curr_string, [self.coords_to_letters[i] for i in visited])
+        new_letter = self.coords_to_letters[node]
+        curr_string += new_letter
         self.recursive_searches += 1
         # print(curr_string)
 
@@ -90,10 +90,24 @@ class SquaredleGraph(nx.Graph):
                 for c in "abcdefghijklmnopqrstuvwxyz":
                     if self.trie.search(curr_string[:-1] + c):
                         self.valid_words.append(curr_string[:-1] + c)
+            elif "*" in curr_string:
+                asterisk_index = curr_string.index("*")
+                for c in curr_string[(asterisk_index + 1):]:
+                    if self.trie.search(curr_string[0:asterisk_index] + c):
+                        self.valid_words.append(curr_string[0:asterisk_index] + c)
             else:
-                # Single character search
+                # Regular character search?
                 if self.trie.search(curr_string):
                     self.valid_words.append(curr_string)
+
+        if "*" in curr_string:
+            asterisk_index = curr_string.index("*")
+            for c in curr_string[(asterisk_index + 1):]:
+                curr_string = curr_string[0:asterisk_index] + c
+                if self.trie.is_prefix(curr_string):
+                    for neighbor in self.neighbors(node):
+                        if neighbor not in visited:
+                            self._find_words_starting_with_letter(neighbor, curr_string, visited)
 
         if self.trie.is_prefix(curr_string):
             if curr_string[-1] == "?":
@@ -143,7 +157,7 @@ def generate_trie():
 
 
 SQUAREDLE_GRID = [["u", "t", "s"],
-                  ["d", "?", "e"],
+                  ["d", "*hc", "e"],
                   ["r", "o", "n"]]
 
 SQUAREDLE_GRID_2 = [["s", "f", "r", "k", "s"],
