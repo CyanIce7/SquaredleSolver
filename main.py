@@ -95,6 +95,7 @@ class SquaredleGraph(nx.Graph):
 
         return self.valid_words
 
+
 def generate_trie():
     """
     Load the word list and create a Trie with it.
@@ -106,7 +107,7 @@ def generate_trie():
 
     trie = Trie()
     for word in word_list:
-        if len(word) >= 4:
+        if 4 <= len(word) <= 16:
             trie.insert(word)
 
     return trie
