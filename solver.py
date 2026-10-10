@@ -154,14 +154,15 @@ DIRECTIONS = [
     (1, -1), (1, 0), (1, 1)
 ]
 
-t1 = timeit.default_timer()
-squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
-trie = generate_trie()
-squaredle_graph.add_trie(trie)
-squaredle_graph.find_words()
-t2 = timeit.default_timer()
+if __name__ == "__main__":
+    t1 = timeit.default_timer()
+    squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
+    trie = generate_trie()
+    squaredle_graph.add_trie(trie)
+    squaredle_graph.find_words()
+    t2 = timeit.default_timer()
 
-print(squaredle_graph.valid_words)
-print(len(squaredle_graph.valid_words))
-print(t2 - t1)
+    print(squaredle_graph.valid_words)
+    print(len(squaredle_graph.valid_words))
+    print(t2 - t1)
 

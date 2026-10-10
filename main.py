@@ -2,7 +2,7 @@
 Flask test
 """
 from flask import Flask, render_template, request
-import solver
+from solver import SquaredleGraph, generate_trie
 app = Flask(__name__)
 
 
@@ -13,9 +13,11 @@ def handle_form():
         if not check_valid_grid(grid_text):
             return f"Invalid grid. Try again!"
         grid = grid_text_to_list(grid_text)
-        return f"{grid}"
+        valid_words = use_solver(grid)
+        return f"{valid_words}"
 
     return render_template('index.html')
+
 
 def check_valid_grid(grid_text: str) -> bool:
     """
@@ -51,7 +53,14 @@ def check_valid_grid(grid_text: str) -> bool:
 
     return True
 
+
 def grid_text_to_list(grid_text: str) -> list[list[str]]:
+    """
+    Converts the grid text into a nested list for further processing.
+
+    Preconditions:
+        - check_valid_grid(grid_text) == True
+    """
     grid = [[]]
     curr_row = 0
     for char in grid_text:
@@ -63,6 +72,17 @@ def grid_text_to_list(grid_text: str) -> list[list[str]]:
         else:
             grid[curr_row].append(char.lower())
     return grid
+
+
+def use_solver(grid: list[list[str]]) -> list[str]:
+    """
+    Find the solutions using solver.py.
+    """
+    squaredle_graph = SquaredleGraph(grid)
+    trie = generate_trie()
+    squaredle_graph.add_trie(trie)
+    squaredle_graph.find_words()
+    return squaredle_graph.valid_words
 
 
 if __name__ == '__main__':
