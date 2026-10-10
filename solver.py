@@ -5,10 +5,9 @@ Squaredle solver
 import networkx as nx
 from trie import Trie
 import timeit
-import pickle
-import os
 
 word_list = []
+MIN_WORD_LENGTH, MAX_WORD_LENGTH = 4, 16
 
 
 class SquaredleGraph(nx.Graph):
@@ -49,9 +48,6 @@ class SquaredleGraph(nx.Graph):
                     self.add_node(node)
                     self.coords_to_letters[node] = grid[row][col]
 
-        print(self.nodes)
-        print(self._missing_nodes)
-
         for row in range(row_num):
             for col in range(col_num):
                 for x, y in DIRECTIONS:
@@ -66,8 +62,6 @@ class SquaredleGraph(nx.Graph):
                         adjacent_node = (new_row, new_col)
                         if adjacent_node not in self._missing_nodes:
                             self.add_edge(node, adjacent_node)
-
-        print(self.edges)
 
     def add_trie(self, trie: Trie) -> None:
         """
@@ -89,14 +83,29 @@ class SquaredleGraph(nx.Graph):
         # print(curr_string, [self.coords_to_letters[i] for i in visited])
         self.recursive_searches += 1
 
-        if len(curr_string) >= 4:
-            if self.trie.search(curr_string):
-                self.valid_words.append(curr_string)
+        if len(curr_string) >= MIN_WORD_LENGTH:
+            if curr_string[-1] == "?":
+                # Wildcard search (search for every character)
+                for c in "abcdefghijklmnopqrstuvwxyz":
+                    if self.trie.search(curr_string[:-1] + c):
+                        self.valid_words.append(curr_string[:-1] + c)
+            else:
+                # Single character search
+                if self.trie.search(curr_string):
+                    self.valid_words.append(curr_string)
 
         if self.trie.is_prefix(curr_string):
-            for neighbor in self.neighbors(node):
-                if neighbor not in visited:
-                    self._find_words_starting_with_letter(neighbor, curr_string, visited)
+            if curr_string[-1] == "?":
+                # Wildcard search (search for every character)
+                for neighbor in self.neighbors(node):
+                    if neighbor not in visited:
+                        for c in "abcdefghijklmnopqrstuvwxyz":
+                            self._find_words_starting_with_letter(neighbor, curr_string[:-1] + c, visited)
+            else:
+                # Single character search
+                for neighbor in self.neighbors(node):
+                    if neighbor not in visited:
+                        self._find_words_starting_with_letter(neighbor, curr_string, visited)
             visited.remove(node)
         else:
             visited.remove(node)
@@ -126,14 +135,14 @@ def generate_trie():
 
     trie = Trie()
     for word in word_list:
-        if 4 <= len(word) <= 16:
+        if MIN_WORD_LENGTH <= len(word) <= MAX_WORD_LENGTH:
             trie.insert(word)
 
     return trie
 
 
 SQUAREDLE_GRID = [["u", "t", "s"],
-                  ["d", "h", "e"],
+                  ["d", "?", "e"],
                   ["r", "o", "n"]]
 
 SQUAREDLE_GRID_2 = [["s", "f", "r", "k", "s"],
@@ -156,7 +165,7 @@ DIRECTIONS = [
 
 if __name__ == "__main__":
     t1 = timeit.default_timer()
-    squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
+    squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
     trie = generate_trie()
     squaredle_graph.add_trie(trie)
     squaredle_graph.find_words()

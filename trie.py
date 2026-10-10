@@ -70,11 +70,20 @@ class Trie:
         Return whether this key exists in the Trie.
         """
         curr = self.root
+        letter_index = 0
         for c in key:
-            index = ord(c) - ord('a')
-            if curr.children[index] is None:
-                return False
-            curr = curr.children[index]
+            if c == "?":
+                potential_letters = []
+                for child in curr.children:
+                    if child is not None:
+                        potential_letters.append(child)
+                return any(self.search(key[:letter_index] + child.letter + key[(letter_index + 1):]) for child in potential_letters)
+            else:
+                index = ord(c) - ord('a')
+                if curr.children[index] is None:
+                    return False
+                curr = curr.children[index]
+            letter_index += 1
         return curr.is_end_word
 
     def is_prefix(self, prefix: str):
@@ -82,25 +91,35 @@ class Trie:
         Return whether this prefix exists in the Trie.
         """
         curr = self.root
+        letter_index = 0
         for c in prefix:
-            index = ord(c) - ord('a')
-            if curr.children[index] is None:
-                return False
-            curr = curr.children[index]
+            if c == "?":
+                potential_letters = []
+                for child in curr.children:
+                    if child is not None:
+                        potential_letters.append(child)
+                return any(self.search(prefix[:letter_index] + child.letter + prefix[(letter_index + 1):]) for child in potential_letters)
+            else:
+                index = ord(c) - ord('a')
+                if curr.children[index] is None:
+                    return False
+                curr = curr.children[index]
+            letter_index += 1
         return True
 
 
 if __name__ == "__main__":
-    my_dictionary = ["sun", "shoe", "hound", "hounds", "shin", "honey"]
+    my_dictionary = ["sun", "shoe", "hound", "hounds", "shin", "honey", "hungover"]
     trie = Trie()
     for word in my_dictionary:
         trie.insert(word)
     print(trie)
     print(trie.search("hound"))
-    print(trie.search("hounds"))
-    print(trie.search("hone"))
-    print(trie.search("sheet"))
-    print(trie.is_prefix("hone"))
+    print(trie.search("hound?"))
+    print(trie.search("h?ney"))
+    print(trie.search("h?ngover"))
+    print(trie.search("su?"))
+    print(trie.search("s?d"))
 
 
 

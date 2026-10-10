@@ -14,10 +14,17 @@ def handle_form():
             return f"Invalid grid. Try again!"
         grid = grid_text_to_list(grid_text)
         valid_words = use_solver(grid)
-        return f"{valid_words}"
+        output = format_words(valid_words)
+        return render_template("index.html", result=output)
 
-    return render_template('index.html')
+    return render_template("index.html")
 
+def format_words(words: list[str]) -> str:
+    output = "Found words: "
+    for word in words:
+        output += (word + ", ")
+    output = output[:-2]
+    return output
 
 def check_valid_grid(grid_text: str) -> bool:
     """
@@ -65,7 +72,7 @@ def grid_text_to_list(grid_text: str) -> list[list[str]]:
     curr_row = 0
     for char in grid_text:
         if char == "-":
-            grid[curr_row].append("-")
+            grid[curr_row].append("-")  # type: ignore
         elif char == "/":
             grid.append([])
             curr_row += 1
