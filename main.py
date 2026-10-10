@@ -3,9 +3,8 @@ Squaredle solver
 """
 
 import networkx as nx
-import matplotlib.pyplot as plt
-import typing
 from trie import Trie
+import timeit
 
 word_list = []
 
@@ -14,11 +13,14 @@ class SquaredleGraph(nx.Graph):
     """
     Squaredle graph lol
     """
-    coords_to_letters: dict
+    coords_to_letters: dict[tuple, str]
+    trie: Trie
+    valid_words: list
 
     def __init__(self, grid):
         super().__init__()
         self.coords_to_letters = {}
+        self.valid_words = []
 
         self.build_graph(grid)
 
@@ -42,6 +44,43 @@ class SquaredleGraph(nx.Graph):
                         adjacent_node = (new_row, new_col)
                         if adjacent_node not in self.coords_to_letters:
                             self.add_edge(node, adjacent_node)
+
+    def add_trie(self, trie: Trie):
+        """
+        Add the word trie into this class.
+        """
+        self.trie = trie
+
+    def _find_words_starting_with_letter(self, node: tuple, curr_string="", visited=None):
+        """
+        Find valid words in the grid starting with self.coords_to_letters[node] using depth-first search.
+        Mutating method.
+        """
+        if visited is None:
+            visited = set()
+
+        visited.add(node)
+        curr_string += self.coords_to_letters[node]
+        print(curr_string, [self.coords_to_letters[i] for i in visited])
+
+        if len(curr_string) >= 4:
+            if self.trie.search(curr_string):
+                self.valid_words.append(curr_string)
+
+        if self.trie.is_prefix(curr_string):
+            for neighbor in self.neighbors(node):
+                if neighbor not in visited:
+                    self._find_words_starting_with_letter(neighbor, curr_string, visited)
+            visited.remove(node)
+        else:
+            visited.remove(node)
+
+    def find_words(self):
+        """
+        Find all words in this squaredle.
+        """
+        for k in self.coords_to_letters:
+            self._find_words_starting_with_letter(k)
 
 
 def load_trie():
@@ -71,11 +110,9 @@ DIRECTIONS = [
 ]
 
 squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
-
-print(squaredle_graph.coords_to_letters)
 trie = load_trie()
-print(trie)
-print(word_list)
+squaredle_graph.add_trie(trie)
+squaredle_graph.find_words()
 
-# blah blah
-# bees
+print(squaredle_graph.valid_words)
+

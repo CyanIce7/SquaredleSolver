@@ -84,11 +84,17 @@ class Trie:
         return True
 
 
-my_dictionary = ["sun", "shoe", "hound", "hounds", "shin", "honey"]
-trie = Trie()
-for word in my_dictionary:
-    trie.insert(word)
-print(trie)
+if __name__ == "__main__":
+    my_dictionary = ["sun", "shoe", "hound", "hounds", "shin", "honey"]
+    trie = Trie()
+    for word in my_dictionary:
+        trie.insert(word)
+    print(trie)
+    print(trie.search("hound"))
+    print(trie.search("hounds"))
+    print(trie.search("hone"))
+    print(trie.search("sheet"))
+    print(trie.is_prefix("hone"))
 
 
 
