@@ -19,12 +19,14 @@ class SquaredleGraph(nx.Graph):
     trie: Trie
     valid_words: list
     recursive_searches: int
+    _missing_nodes: set[tuple]
 
     def __init__(self, grid):
         super().__init__()
         self.coords_to_letters = {}
         self.valid_words = []
         self.recursive_searches = 0
+        self._missing_nodes = set()
 
         self.build_graph(grid)
 
@@ -39,16 +41,33 @@ class SquaredleGraph(nx.Graph):
         for row in range(row_num):
             for col in range(col_num):
                 node = (row, col)
-                self.add_node(node)
-                self.coords_to_letters[node] = grid[row][col]
 
+                if grid[row][col] == "-":
+                    self._missing_nodes.add(node)
+                    continue
+                else:
+                    self.add_node(node)
+                    self.coords_to_letters[node] = grid[row][col]
+
+        print(self.nodes)
+        print(self._missing_nodes)
+
+        for row in range(row_num):
+            for col in range(col_num):
                 for x, y in DIRECTIONS:
+                    node = (row, col)
+
+                    if node in self._missing_nodes:
+                        continue
+
                     new_row, new_col = x + row, y + col
 
                     if 0 <= new_row < row_num and 0 <= new_col < col_num:
                         adjacent_node = (new_row, new_col)
-                        if adjacent_node not in self.coords_to_letters:
+                        if adjacent_node not in self._missing_nodes:
                             self.add_edge(node, adjacent_node)
+
+        print(self.edges)
 
     def add_trie(self, trie: Trie) -> None:
         """
@@ -117,29 +136,17 @@ SQUAREDLE_GRID = [["u", "t", "s"],
                   ["d", "h", "e"],
                   ["r", "o", "n"]]
 
-SQUAREDLE_GRID_2 = [["a", "m", "y", "u", "m"],
+SQUAREDLE_GRID_2 = [["s", "f", "r", "k", "s"],
+                    ["f", "e", "v", "s", "c"],
+                    ["e", "-", "e", "-", "e"],
+                    ["h", "r", "n", "e", "n"],
+                    ["g", "w", "j", "t", "c"]]
+
+SQUAREDLE_GRID_3 = [["a", "m", "y", "u", "m"],
                     ["e", "l", "b", "f", "o"],
                     ["n", "c", "i", "r", "y"],
                     ["t", "h", "c", "b", "r"],
                     ["e", "d", "i", "m", "e"]]
-
-SQUAREDLE_GRID_MASSIVE = grid = [
-    ['s', 't', 'r', 'e', 'a', 'm', 'l', 'i', 'n', 'e', 'd', 'w', 'o', 'r', 'k'],
-    ['a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', 'b', 'a', 's', 'e'],
-    ['c', 'o', 'm', 'p', 'u', 't', 'e', 'r', 's', 'c', 'i', 'e', 'n', 'c', 'e'],
-    ['d', 'e', 'v', 'e', 'l', 'o', 'p', 'm', 'e', 'n', 't', 't', 'e', 'a', 'm'],
-    ['e', 'n', 'v', 'i', 'r', 'o', 'n', 'm', 'e', 'n', 't', 'a', 'l', 'l', 'y'],
-    ['f', 'u', 'n', 'd', 'a', 'm', 'e', 'n', 't', 'a', 'l', 'i', 's', 't', 's'],
-    ['g', 'e', 'o', 'g', 'r', 'a', 'p', 'h', 'i', 'c', 'a', 'l', 'l', 'y', 'x'],
-    ['h', 'e', 'l', 'i', 'c', 'o', 'p', 't', 'e', 'r', 'p', 'i', 'l', 'o', 't'],
-    ['i', 'n', 't', 'e', 'r', 'n', 'a', 't', 'i', 'o', 'n', 'a', 'l', 'l', 'y'],
-    ['j', 'u', 's', 't', 'i', 'f', 'i', 'c', 'a', 't', 'i', 'o', 'n', 's', 'z'],
-    ['k', 'n', 'o', 'w', 'l', 'e', 'd', 'g', 'e', 'b', 'a', 's', 'e', 'd', 'q'],
-    ['l', 'e', 'x', 'i', 'c', 'o', 'g', 'r', 'a', 'p', 'h', 'e', 'r', 's', 'w'],
-    ['m', 'a', 'c', 'r', 'o', 'e', 'c', 'o', 'n', 'o', 'm', 'i', 'c', 's', 'v'],
-    ['n', 'e', 'u', 'r', 'o', 's', 'c', 'i', 'e', 'n', 't', 'i', 's', 't', 's'],
-    ['o', 'r', 'g', 'a', 'n', 'i', 'z', 'a', 't', 'i', 'o', 'n', 'a', 'l', 'y']
-]
 
 DIRECTIONS = [
     (-1, -1), (-1, 0), (-1, 1),
@@ -148,7 +155,7 @@ DIRECTIONS = [
 ]
 
 t1 = timeit.default_timer()
-squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_MASSIVE)
+squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
 trie = generate_trie()
 squaredle_graph.add_trie(trie)
 squaredle_graph.find_words()
@@ -157,5 +164,4 @@ t2 = timeit.default_timer()
 print(squaredle_graph.valid_words)
 print(len(squaredle_graph.valid_words))
 print(t2 - t1)
-print(squaredle_graph.recursive_searches)
 
