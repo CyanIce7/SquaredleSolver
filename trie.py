@@ -54,6 +54,12 @@ class Trie:
         curr = self.root
         for c in key:
             index = ord(c) - ord('a')
+
+            # Catch invalid index
+            if index < 0 or index >= 26:
+                print(key, index)
+                return
+
             if curr.children[index] is None:
                 curr.children[index] = TrieNode(c)  # type: ignore
             curr = curr.children[index]

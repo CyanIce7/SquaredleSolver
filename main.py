@@ -16,11 +16,13 @@ class SquaredleGraph(nx.Graph):
     coords_to_letters: dict[tuple, str]
     trie: Trie
     valid_words: list
+    recursive_searches: int
 
     def __init__(self, grid):
         super().__init__()
         self.coords_to_letters = {}
         self.valid_words = []
+        self.recursive_searches = 0
 
         self.build_graph(grid)
 
@@ -63,7 +65,8 @@ class SquaredleGraph(nx.Graph):
 
         visited.add(node)
         curr_string += self.coords_to_letters[node]
-        print(curr_string, [self.coords_to_letters[i] for i in visited])
+        # print(curr_string, [self.coords_to_letters[i] for i in visited])
+        self.recursive_searches += 1
 
         if len(curr_string) >= 4:
             if self.trie.search(curr_string):
@@ -93,7 +96,7 @@ class SquaredleGraph(nx.Graph):
 
 def load_trie():
     """
-    Create a trie with the word list.
+    Load the word list and create a Trie with it.
     """
     global word_list
 
@@ -102,7 +105,8 @@ def load_trie():
 
     trie = Trie()
     for word in word_list:
-        trie.insert(word)
+        if len(word) >= 4:
+            trie.insert(word)
 
     return trie
 
@@ -117,6 +121,24 @@ SQUAREDLE_GRID_2 = [["a", "m", "y", "u", "m"],
                     ["t", "h", "c", "b", "r"],
                     ["e", "d", "i", "m", "e"]]
 
+SQUAREDLE_GRID_MASSIVE = grid = [
+    ['s', 't', 'r', 'e', 'a', 'm', 'l', 'i', 'n', 'e', 'd', 'w', 'o', 'r', 'k'],
+    ['a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', 'b', 'a', 's', 'e'],
+    ['c', 'o', 'm', 'p', 'u', 't', 'e', 'r', 's', 'c', 'i', 'e', 'n', 'c', 'e'],
+    ['d', 'e', 'v', 'e', 'l', 'o', 'p', 'm', 'e', 'n', 't', 't', 'e', 'a', 'm'],
+    ['e', 'n', 'v', 'i', 'r', 'o', 'n', 'm', 'e', 'n', 't', 'a', 'l', 'l', 'y'],
+    ['f', 'u', 'n', 'd', 'a', 'm', 'e', 'n', 't', 'a', 'l', 'i', 's', 't', 's'],
+    ['g', 'e', 'o', 'g', 'r', 'a', 'p', 'h', 'i', 'c', 'a', 'l', 'l', 'y', 'x'],
+    ['h', 'e', 'l', 'i', 'c', 'o', 'p', 't', 'e', 'r', 'p', 'i', 'l', 'o', 't'],
+    ['i', 'n', 't', 'e', 'r', 'n', 'a', 't', 'i', 'o', 'n', 'a', 'l', 'l', 'y'],
+    ['j', 'u', 's', 't', 'i', 'f', 'i', 'c', 'a', 't', 'i', 'o', 'n', 's', 'z'],
+    ['k', 'n', 'o', 'w', 'l', 'e', 'd', 'g', 'e', 'b', 'a', 's', 'e', 'd', 'q'],
+    ['l', 'e', 'x', 'i', 'c', 'o', 'g', 'r', 'a', 'p', 'h', 'e', 'r', 's', 'w'],
+    ['m', 'a', 'c', 'r', 'o', 'e', 'c', 'o', 'n', 'o', 'm', 'i', 'c', 's', 'v'],
+    ['n', 'e', 'u', 'r', 'o', 's', 'c', 'i', 'e', 'n', 't', 'i', 's', 't', 's'],
+    ['o', 'r', 'g', 'a', 'n', 'i', 'z', 'a', 't', 'i', 'o', 'n', 'a', 'l', 'y']
+]
+
 DIRECTIONS = [
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
@@ -124,7 +146,7 @@ DIRECTIONS = [
 ]
 
 t1 = timeit.default_timer()
-squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
+squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_MASSIVE)
 trie = load_trie()
 squaredle_graph.add_trie(trie)
 squaredle_graph.find_words()
@@ -133,4 +155,5 @@ t2 = timeit.default_timer()
 print(squaredle_graph.valid_words)
 print(len(squaredle_graph.valid_words))
 print(t2 - t1)
+print(squaredle_graph.recursive_searches)
 
