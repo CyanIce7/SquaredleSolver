@@ -27,9 +27,10 @@ class SquaredleGraph(nx.Graph):
     def build_graph(self, grid: list[list[str]]) -> None:
         """
         Add nodes and edges to the graph.
+        Mutating method.
         """
-        row_num = len(SQUAREDLE_GRID)
-        col_num = len(SQUAREDLE_GRID[0])
+        row_num = len(grid)
+        col_num = len(grid[0])
 
         for row in range(row_num):
             for col in range(col_num):
@@ -45,13 +46,14 @@ class SquaredleGraph(nx.Graph):
                         if adjacent_node not in self.coords_to_letters:
                             self.add_edge(node, adjacent_node)
 
-    def add_trie(self, trie: Trie):
+    def add_trie(self, trie: Trie) -> None:
         """
         Add the word trie into this class.
+        Mutating method.
         """
         self.trie = trie
 
-    def _find_words_starting_with_letter(self, node: tuple, curr_string="", visited=None):
+    def _find_words_starting_with_letter(self, node: tuple, curr_string="", visited=None) -> None:
         """
         Find valid words in the grid starting with self.coords_to_letters[node] using depth-first search.
         Mutating method.
@@ -75,12 +77,18 @@ class SquaredleGraph(nx.Graph):
         else:
             visited.remove(node)
 
-    def find_words(self):
+    def find_words(self, sort: bool = True) -> list[str]:
         """
         Find all words in this squaredle.
         """
         for k in self.coords_to_letters:
             self._find_words_starting_with_letter(k)
+        self.valid_words = list(set(self.valid_words))
+
+        if sort:
+            self.valid_words.sort()
+
+        return self.valid_words
 
 
 def load_trie():
@@ -103,16 +111,26 @@ SQUAREDLE_GRID = [["u", "t", "s"],
                   ["d", "h", "e"],
                   ["r", "o", "n"]]
 
+SQUAREDLE_GRID_2 = [["a", "m", "y", "u", "m"],
+                    ["e", "l", "b", "f", "o"],
+                    ["n", "c", "i", "r", "y"],
+                    ["t", "h", "c", "b", "r"],
+                    ["e", "d", "i", "m", "e"]]
+
 DIRECTIONS = [
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
     (1, -1), (1, 0), (1, 1)
 ]
 
-squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
+t1 = timeit.default_timer()
+squaredle_graph = SquaredleGraph(SQUAREDLE_GRID_2)
 trie = load_trie()
 squaredle_graph.add_trie(trie)
 squaredle_graph.find_words()
+t2 = timeit.default_timer()
 
 print(squaredle_graph.valid_words)
+print(len(squaredle_graph.valid_words))
+print(t2 - t1)
 
