@@ -88,33 +88,67 @@
             color: #333;
             letter-spacing: 4px; /* Spaces the letters out a bit */
         }
+
+        /* New container to hold the grid and the list side-by-side */
+        .main-content {
+            display: flex;
+            flex-direction: row;
+            gap: 50px;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        /* Updated styles for the word list on the side */
+        #word-list-container {
+            min-width: 150px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        #word-list-container h3 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
     <h2>Click and drag to select!</h2>
 
-    <!-- New element to display the current sequence of letters -->
     <div id="word-display"></div>
 
-    <div class="grid-wrapper">
+    <!-- New wrapper to position items side-by-side -->
+    <div class="main-content">
 
-    <div class="grid-wrapper">
-        <!-- SVG overlay for the drawing line -->
-        <svg id="line-svg">
-            <polyline id="selection-line"></polyline>
-        </svg>
+        <div class="grid-wrapper">
+            <svg id="line-svg">
+                <polyline id="selection-line"></polyline>
+            </svg>
 
-        <div class="grid-container">
-            {% for r in range(size) %}
-                {% for c in range(size) %}
-                    <div class="cell {% if grid[r][c].active == 1 %}active{% endif %}"
-                         data-row="{{ r }}"
-                         data-col="{{ c }}">
-                        {{ grid[r][c].letter }}
-                    </div>
+            <div class="grid-container">
+                {% for r in range(size) %}
+                    {% for c in range(size) %}
+                        <div class="cell {% if grid[r][c].active == 1 %}active{% endif %}"
+                             data-row="{{ r }}"
+                             data-col="{{ c }}">
+                            {{ grid[r][c].letter.upper() }}
+                        </div>
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
+            </div>
         </div>
+
+        <!-- The word list is now a sibling to the grid wrapper -->
+        <div id="word-list-container">
+            <h3>Found Words:</h3>
+            <ul id="word-list" style="list-style-type: none; padding: 0; font-size: 20px;">
+                {% for word in words %}
+                    <li>{{ word }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
     </div>
 
     <script>
@@ -225,15 +259,35 @@
             if (isDragging) {
                 isDragging = false;
 
+                // Capture the word before clearing the display
+                const finalWord = wordDisplay.textContent;
+
+                // Clear the UI
                 document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
                 selectedPath = [];
-
                 updateLine();
-                updateWordDisplay(); // Clear the word when mouse is released
+                wordDisplay.textContent = '';
 
-                fetch('/clear_grid', {
-                    method: 'POST'
-                }).catch(error => console.error('Error:', error));
+                // Send the completed word to the server
+                fetch('/submit_word', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ word: finalWord })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Completely rebuild the word list based on Python's memory
+                        const wordListElement = document.getElementById('word-list');
+                        wordListElement.innerHTML = '';
+                        data.words.forEach(w => {
+                            const li = document.createElement('li');
+                            li.textContent = w;
+                            wordListElement.appendChild(li);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
             }
         });
     </script>

@@ -71,6 +71,7 @@ class Trie:
         """
         curr = self.root
         letter_index = 0
+        key = key.lower()
         for c in key:
             if c == "?":
                 potential_letters = []
