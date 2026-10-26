@@ -157,7 +157,7 @@ def generate_trie():
 
 
 SQUAREDLE_GRID = [["u", "t", "s"],
-                  ["d", "*hc", "e"],
+                  ["d", "h", "e"],
                   ["r", "o", "n"]]
 
 SQUAREDLE_GRID_2 = [["s", "f", "r", "k", "s"],

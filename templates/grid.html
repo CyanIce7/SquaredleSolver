@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag to Select with Line</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+            user-select: none;
+        }
+
+        /* Wrap the grid and SVG so they stack perfectly */
+        .grid-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat({{ size }}, 60px);
+            gap: 2px;
+            background-color: #333;
+            border: 2px solid #333;
+            touch-action: none;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .cell.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* SVG overlay styles */
+        #line-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Critical: allows mouse events to pass through to the cells */
+            z-index: 10;
+        }
+
+        #selection-line {
+            fill: none;
+            stroke: rgba(0, 0, 0, 0.4); /* Semi-transparent black line */
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+    <h2>Click and drag to select!</h2>
+
+    <div class="grid-wrapper">
+        <!-- SVG overlay for the drawing line -->
+        <svg id="line-svg">
+            <polyline id="selection-line"></polyline>
+        </svg>
+
+        <div class="grid-container">
+            {% for r in range(size) %}
+                {% for c in range(size) %}
+                    <div class="cell {% if grid[r][c].active == 1 %}active{% endif %}"
+                         data-row="{{ r }}"
+                         data-col="{{ c }}">
+                        {{ grid[r][c].letter }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        let isDragging = false;
+        let selectedPath = []; // Track the DOM elements we have visited
+
+        const svgLine = document.getElementById('selection-line');
+        const gridWrapper = document.querySelector('.grid-wrapper');
+
+        // Calculates cell centers and updates the SVG line
+        function updateLine() {
+            if (selectedPath.length === 0) {
+                svgLine.setAttribute('points', '');
+                return;
+            }
+
+            const wrapperRect = gridWrapper.getBoundingClientRect();
+
+            const points = selectedPath.map(cell => {
+                const rect = cell.getBoundingClientRect();
+                // Calculate the exact center of the cell relative to the wrapper
+                const x = (rect.left - wrapperRect.left) + (rect.width / 2);
+                const y = (rect.top - wrapperRect.top) + (rect.height / 2);
+                return `${x},${y}`;
+            });
+
+            svgLine.setAttribute('points', points.join(' '));
+        }
+
+        function activateCell(cellElement) {
+            if (cellElement.classList.contains('active')) return;
+
+            cellElement.classList.add('active');
+
+            // Add the new cell to our path and redraw the line
+            selectedPath.push(cellElement);
+            updateLine();
+
+            const row = cellElement.getAttribute('data-row');
+            const col = cellElement.getAttribute('data-col');
+
+            fetch('/activate_cell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ row: row, col: col })
+            }).catch(error => console.error('Error:', error));
+        }
+
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('dragstart', (e) => e.preventDefault());
+
+            cell.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isDragging = true;
+
+                // Clear any leftover lines before starting a new one
+                selectedPath = [];
+                activateCell(cell);
+            });
+
+            cell.addEventListener('mouseenter', () => {
+                if (isDragging) {
+                    activateCell(cell);
+                }
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+
+                // Clear the UI and the line
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+                selectedPath = [];
+                updateLine();
+
+                fetch('/clear_grid', {
+                    method: 'POST'
+                }).catch(error => console.error('Error:', error));
+            }
+        });
+    </script>
+</body>
+</html>

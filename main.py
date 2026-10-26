@@ -19,12 +19,14 @@ def handle_form():
 
     return render_template("index.html")
 
+
 def format_words(words: list[str]) -> str:
     output = "Found words: "
     for word in words:
         output += (word + ", ")
     output = output[:-2]
     return output
+
 
 def check_valid_grid(grid_text: str) -> bool:
     """

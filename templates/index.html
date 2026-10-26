@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squaredle Solver</title>
+</head>
+<body>
+    <h1>Squaredle Solver</h1>
+    <p>Input squaredle grid: (- represents empty squares, / represents new line)</p>
+    <form action="/" method="POST">
+        <label for="grid">Grid:</label>
+        <input type="text" id="grid" name="grid" required>
+        <input type="submit" value="Submit">
+    </form>
+    <p>{{ result }}</p>
+</body>
+</html>
