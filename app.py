@@ -33,6 +33,17 @@ def activate_cell():
     return jsonify({'status': 'success'})
 
 
+@app.route('/deactivate_cell', methods=['POST'])
+def deactivate_cell():
+    data = request.get_json()
+    row = int(data['row'])
+    col = int(data['col'])
+
+    # Set the cell back to inactive
+    server_grid[row][col]['active'] = 0
+    return jsonify({'status': 'success'})
+
+
 @app.route('/clear_grid', methods=['POST'])
 def clear_grid():
     # Reset all cells to inactive

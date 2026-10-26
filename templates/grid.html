@@ -23,9 +23,7 @@
         .grid-container {
             display: grid;
             grid-template-columns: repeat({{ size }}, 60px);
-            gap: 2px;
-            background-color: #333;
-            border: 2px solid #333;
+            gap: 10px; /* Increases the space between rows and columns */
             touch-action: none;
         }
 
@@ -33,16 +31,34 @@
             width: 60px;
             height: 60px;
             background-color: white;
+            border: 2px solid #ccc; /* Adds borders to individual cells instead of the container */
+            border-radius: 8px; /* Optional: rounds the corners of the cells */
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 24px;
             font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: adds a slight drop shadow */
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
         }
+
+        .cell:hover {
+            transform: scale(1.1); /* Enlarges the cell by 10% */
+            background-color: #f8f9fa; /* Slightly darkens the background */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2); /* Deepens the shadow */
+            z-index: 2; /* Ensures the enlarged cell overlaps its neighbors */
+            position: relative; /* Required for z-index to work properly */
+        }
+
+        /* Keep your existing active state */
         .cell.active {
-            background-color: #4CAF50;
-            color: white;
+            background-color: #91e9ff;
+            color: black;
+            /* You can optionally add a transform here too if you want it to stay popped out when selected */
+            transform: scale(1.1);
+            position: relative;
+            z-index: 2;
         }
 
         /* SVG overlay styles */
@@ -63,10 +79,24 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+
+        #word-display {
+            font-size: 32px;
+            font-weight: bold;
+            height: 40px; /* Fixed height so the page doesn't jump when empty */
+            margin-bottom: 20px;
+            color: #333;
+            letter-spacing: 4px; /* Spaces the letters out a bit */
+        }
     </style>
 </head>
 <body>
     <h2>Click and drag to select!</h2>
+
+    <!-- New element to display the current sequence of letters -->
+    <div id="word-display"></div>
+
+    <div class="grid-wrapper">
 
     <div class="grid-wrapper">
         <!-- SVG overlay for the drawing line -->
@@ -89,12 +119,20 @@
 
     <script>
         let isDragging = false;
-        let selectedPath = []; // Track the DOM elements we have visited
+        let selectedPath = [];
 
         const svgLine = document.getElementById('selection-line');
         const gridWrapper = document.querySelector('.grid-wrapper');
+        const svgContainer = document.getElementById('line-svg');
+        const wordDisplay = document.getElementById('word-display'); // Grab the word display element
 
-        // Calculates cell centers and updates the SVG line
+        // New helper function to update the text on the screen
+        function updateWordDisplay() {
+            // Map over the selected cells, extract their text, remove whitespace, and join them into a string
+            const currentWord = selectedPath.map(cell => cell.textContent.trim()).join('');
+            wordDisplay.textContent = currentWord;
+        }
+
         function updateLine() {
             if (selectedPath.length === 0) {
                 svgLine.setAttribute('points', '');
@@ -102,10 +140,10 @@
             }
 
             const wrapperRect = gridWrapper.getBoundingClientRect();
+            svgContainer.setAttribute('viewBox', `0 0 ${wrapperRect.width} ${wrapperRect.height}`);
 
             const points = selectedPath.map(cell => {
                 const rect = cell.getBoundingClientRect();
-                // Calculate the exact center of the cell relative to the wrapper
                 const x = (rect.left - wrapperRect.left) + (rect.width / 2);
                 const y = (rect.top - wrapperRect.top) + (rect.height / 2);
                 return `${x},${y}`;
@@ -114,22 +152,57 @@
             svgLine.setAttribute('points', points.join(' '));
         }
 
-        function activateCell(cellElement) {
+        function handleDrag(cellElement) {
+            if (!isDragging) return;
+
+            // 1. Check for backtracking
+            if (selectedPath.length > 1 && cellElement === selectedPath[selectedPath.length - 2]) {
+                const poppedCell = selectedPath.pop();
+                poppedCell.classList.remove('active');
+
+                updateLine();
+                updateWordDisplay(); // Update the word when backtracking
+
+                fetch('/deactivate_cell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        row: poppedCell.getAttribute('data-row'),
+                        col: poppedCell.getAttribute('data-col')
+                    })
+                }).catch(error => console.error('Error:', error));
+
+                return;
+            }
+
+            // 2. Prevent redundant activation
             if (cellElement.classList.contains('active')) return;
 
+            // 3. Adjacency Check
+            const newRow = parseInt(cellElement.getAttribute('data-row'));
+            const newCol = parseInt(cellElement.getAttribute('data-col'));
+
+            if (selectedPath.length > 0) {
+                const lastCell = selectedPath[selectedPath.length - 1];
+                const lastRow = parseInt(lastCell.getAttribute('data-row'));
+                const lastCol = parseInt(lastCell.getAttribute('data-col'));
+
+                if (Math.abs(newRow - lastRow) > 1 || Math.abs(newCol - lastCol) > 1) {
+                    return;
+                }
+            }
+
+            // 4. Activate the new cell
             cellElement.classList.add('active');
-
-            // Add the new cell to our path and redraw the line
             selectedPath.push(cellElement);
-            updateLine();
 
-            const row = cellElement.getAttribute('data-row');
-            const col = cellElement.getAttribute('data-col');
+            updateLine();
+            updateWordDisplay(); // Update the word when a new cell is added
 
             fetch('/activate_cell', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ row: row, col: col })
+                body: JSON.stringify({ row: newRow, col: newCol })
             }).catch(error => console.error('Error:', error));
         }
 
@@ -139,16 +212,12 @@
             cell.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 isDragging = true;
-
-                // Clear any leftover lines before starting a new one
                 selectedPath = [];
-                activateCell(cell);
+                handleDrag(cell);
             });
 
             cell.addEventListener('mouseenter', () => {
-                if (isDragging) {
-                    activateCell(cell);
-                }
+                handleDrag(cell);
             });
         });
 
@@ -156,10 +225,11 @@
             if (isDragging) {
                 isDragging = false;
 
-                // Clear the UI and the line
                 document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
                 selectedPath = [];
+
                 updateLine();
+                updateWordDisplay(); // Clear the word when mouse is released
 
                 fetch('/clear_grid', {
                     method: 'POST'

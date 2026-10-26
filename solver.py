@@ -155,6 +155,12 @@ def generate_trie():
 
     return trie
 
+def find_word(word: str):
+    """
+    Return whether this word exists in the grid.
+    """
+    pass
+
 
 SQUAREDLE_GRID = [["u", "t", "s"],
                   ["d", "h", "e"],
