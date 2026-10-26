@@ -18,7 +18,7 @@ stored_words = []
 
 @app.route('/')
 def index():
-    return render_template('grid.html', grid=server_grid, size=grid_size)
+    return render_template('index.html', grid=server_grid, size=grid_size)
 
 
 @app.route('/activate_cell', methods=['POST'])

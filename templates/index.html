@@ -2,16 +2,194 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Squaredle Solver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Griddle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main_stylesheet.css') }}">
+    <style>
+        .grid-container {
+            display: grid;
+            gap: 10px;
+            touch-action: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Squaredle Solver</h1>
-    <p>Input squaredle grid: (- represents empty squares, / represents new line)</p>
-    <form action="/" method="POST">
-        <label for="grid">Grid:</label>
-        <input type="text" id="grid" name="grid" required>
-        <input type="submit" value="Submit">
-    </form>
-    <p>{{ result }}</p>
+    <h2>Click and drag to select!</h2>
+
+    <div id="word-display"></div>
+
+    <!-- New wrapper to position items side-by-side -->
+    <div class="main-content">
+
+        <div class="grid-wrapper">
+            <svg id="line-svg">
+                <polyline id="selection-line"></polyline>
+            </svg>
+
+            <div class="grid-container" style="grid-template-columns: repeat({{ size }}, 60px);">
+                {% for r in range(size) %}
+                    {% for c in range(size) %}
+                        <div class="cell {% if grid[r][c].active == 1 %}active{% endif %}"
+                             data-row="{{ r }}"
+                             data-col="{{ c }}">
+                            {{ grid[r][c].letter.upper() }}
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- The word list is now a sibling to the grid wrapper -->
+        <div id="word-list-container">
+            <h3>Found Words:</h3>
+            <ul id="word-list" style="list-style-type: none; padding: 0; font-size: 20px;">
+                {% for word in words %}
+                    <li>{{ word }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        let isDragging = false;
+        let selectedPath = [];
+
+        const svgLine = document.getElementById('selection-line');
+        const gridWrapper = document.querySelector('.grid-wrapper');
+        const svgContainer = document.getElementById('line-svg');
+        const wordDisplay = document.getElementById('word-display'); // Grab the word display element
+
+        // New helper function to update the text on the screen
+        function updateWordDisplay() {
+            // Map over the selected cells, extract their text, remove whitespace, and join them into a string
+            const currentWord = selectedPath.map(cell => cell.textContent.trim()).join('');
+            wordDisplay.textContent = currentWord;
+        }
+
+        function updateLine() {
+            if (selectedPath.length === 0) {
+                svgLine.setAttribute('points', '');
+                return;
+            }
+
+            const wrapperRect = gridWrapper.getBoundingClientRect();
+            svgContainer.setAttribute('viewBox', `0 0 ${wrapperRect.width} ${wrapperRect.height}`);
+
+            const points = selectedPath.map(cell => {
+                const rect = cell.getBoundingClientRect();
+                const x = (rect.left - wrapperRect.left) + (rect.width / 2);
+                const y = (rect.top - wrapperRect.top) + (rect.height / 2);
+                return `${x},${y}`;
+            });
+
+            svgLine.setAttribute('points', points.join(' '));
+        }
+
+        function handleDrag(cellElement) {
+            if (!isDragging) return;
+
+            // 1. Check for backtracking
+            if (selectedPath.length > 1 && cellElement === selectedPath[selectedPath.length - 2]) {
+                const poppedCell = selectedPath.pop();
+                poppedCell.classList.remove('active');
+
+                updateLine();
+                updateWordDisplay(); // Update the word when backtracking
+
+                fetch('/deactivate_cell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        row: poppedCell.getAttribute('data-row'),
+                        col: poppedCell.getAttribute('data-col')
+                    })
+                }).catch(error => console.error('Error:', error));
+
+                return;
+            }
+
+            // 2. Prevent redundant activation
+            if (cellElement.classList.contains('active')) return;
+
+            // 3. Adjacency Check
+            const newRow = parseInt(cellElement.getAttribute('data-row'));
+            const newCol = parseInt(cellElement.getAttribute('data-col'));
+
+            if (selectedPath.length > 0) {
+                const lastCell = selectedPath[selectedPath.length - 1];
+                const lastRow = parseInt(lastCell.getAttribute('data-row'));
+                const lastCol = parseInt(lastCell.getAttribute('data-col'));
+
+                if (Math.abs(newRow - lastRow) > 1 || Math.abs(newCol - lastCol) > 1) {
+                    return;
+                }
+            }
+
+            // 4. Activate the new cell
+            cellElement.classList.add('active');
+            selectedPath.push(cellElement);
+
+            updateLine();
+            updateWordDisplay(); // Update the word when a new cell is added
+
+            fetch('/activate_cell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ row: newRow, col: newCol })
+            }).catch(error => console.error('Error:', error));
+        }
+
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('dragstart', (e) => e.preventDefault());
+
+            cell.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                selectedPath = [];
+                handleDrag(cell);
+            });
+
+            cell.addEventListener('mouseenter', () => {
+                handleDrag(cell);
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+
+                // Capture the word before clearing the display
+                const finalWord = wordDisplay.textContent;
+
+                // Clear the UI
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+                selectedPath = [];
+                updateLine();
+                wordDisplay.textContent = '';
+
+                // Send the completed word to the server
+                fetch('/submit_word', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ word: finalWord })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Completely rebuild the word list based on Python's memory
+                        const wordListElement = document.getElementById('word-list');
+                        wordListElement.innerHTML = '';
+                        data.words.forEach(w => {
+                            const li = document.createElement('li');
+                            li.textContent = w;
+                            wordListElement.appendChild(li);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    </script>
 </body>
 </html>

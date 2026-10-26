@@ -1,0 +1,106 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
+    user-select: none;
+}
+
+/* Wrap the grid and SVG so they stack perfectly */
+.grid-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat({{ size }}, 60px);
+    gap: 10px; /* Increases the space between rows and columns */
+    touch-action: none;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border: 2px solid #ccc; /* Adds borders to individual cells instead of the container */
+    border-radius: 8px; /* Optional: rounds the corners of the cells */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: adds a slight drop shadow */
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cell:hover {
+    transform: scale(1.1); /* Enlarges the cell by 10% */
+    background-color: #f8f9fa; /* Slightly darkens the background */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2); /* Deepens the shadow */
+    z-index: 2; /* Ensures the enlarged cell overlaps its neighbors */
+    position: relative; /* Required for z-index to work properly */
+}
+
+/* Keep your existing active state */
+.cell.active {
+    background-color: #91e9ff;
+    color: black;
+    /* You can optionally add a transform here too if you want it to stay popped out when selected */
+    transform: scale(1.1);
+    position: relative;
+    z-index: 2;
+}
+
+/* SVG overlay styles */
+#line-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Critical: allows mouse events to pass through to the cells */
+    z-index: 10;
+}
+
+#selection-line {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.4); /* Semi-transparent black line */
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#word-display {
+    font-size: 32px;
+    font-weight: bold;
+    height: 40px; /* Fixed height so the page doesn't jump when empty */
+    margin-bottom: 20px;
+    color: #333;
+    letter-spacing: 4px; /* Spaces the letters out a bit */
+}
+
+/* New container to hold the grid and the list side-by-side */
+.main-content {
+    display: flex;
+    flex-direction: row;
+    gap: 50px;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+/* Updated styles for the word list on the side */
+#word-list-container {
+    min-width: 150px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    text-align: left;
+}
+
+#word-list-container h3 {
+    margin-top: 0;
+}
