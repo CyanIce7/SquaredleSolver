@@ -68,6 +68,11 @@
         let squaresSelected = 0;
         let currentScore = 0;
 
+        // Used when using keyboard to input for multi-letter cells
+        let pendingCell = null;
+        let pendingTyped = "";
+
+
         // New helper function to update the text on the screen
         function updateWordDisplay() {
             // Map over the selected cells, extract their text, remove whitespace, and join them into a string
@@ -245,48 +250,84 @@
             // Handle typing letters
             if (event.key.length === 1 && isAlphabetical) {
                 const targetLetter = event.key.toLowerCase();
+
+                // 1. If we are currently in the middle of typing a multi-letter cell
+                if (pendingCell) {
+                    const cellText = pendingCell.textContent.trim().toLowerCase();
+                    const newTyped = pendingTyped + targetLetter;
+
+                    if (cellText === newTyped) {
+                        // The user finished typing the multi-letter cell -> activate it
+                        isDragging = true;
+                        handleDrag(pendingCell);
+                        pendingCell = null;
+                        pendingTyped = "";
+                    } else if (cellText.startsWith(newTyped)) {
+                        // The user typed a correct letter, but the cell is even longer (e.g., 3+ letters)
+                        pendingTyped = newTyped;
+                    } else {
+                        // The user typed the wrong next letter -> cancel the pending selection
+                        pendingCell = null;
+                        pendingTyped = "";
+                    }
+                    return; // Stop evaluating this keystroke
+                }
+
+                // 2. Normal matching logic (searching for a new cell)
                 let possibleCells = [];
 
-                // Find all unselected cells that match the typed letter
                 document.querySelectorAll('.cell:not(.active)').forEach(cell => {
-                    // Use startsWith to support multi-letter cells like "QU" when user types "Q"
                     if (cell.textContent.trim().toLowerCase().startsWith(targetLetter)) {
                         const r = parseInt(cell.getAttribute('data-row'));
                         const c = parseInt(cell.getAttribute('data-col'));
                         
                         if (selectedPath.length === 0) {
-                            // If starting a new word, any matching cell is valid
                             possibleCells.push(cell);
                         } else {
-                            // If continuing a word, only allow adjacent cells
                             const lastCell = selectedPath[selectedPath.length - 1];
                             const lastRow = parseInt(lastCell.getAttribute('data-row'));
                             const lastCol = parseInt(lastCell.getAttribute('data-col'));
 
-                            const rowDiff = Math.abs(r - lastRow);
-                            const colDiff = Math.abs(c - lastCol);
-
-                            if (rowDiff <= 1 && colDiff <= 1) {
+                            if (Math.abs(r - lastRow) <= 1 && Math.abs(c - lastCol) <= 1) {
                                 possibleCells.push(cell);
                             }
                         }
                     }
                 });
 
-                // If we found a valid cell, activate it
+                // 3. Process the first valid match found
                 if (possibleCells.length > 0) {
-                    isDragging = true; 
-                    handleDrag(possibleCells[0]); // Pass the first valid match to handleDrag
+                    const chosenCell = possibleCells[0];
+                    const cellText = chosenCell.textContent.trim().toLowerCase();
+
+                    if (cellText === targetLetter) {
+                        // Exact match for a standard single-letter cell
+                        isDragging = true; 
+                        handleDrag(chosenCell); 
+                    } else {
+                        // Partial match for a multi-letter cell -> put it in pending mode
+                        pendingCell = chosenCell;
+                        pendingTyped = targetLetter;
+                    }
                 }
                 
             } 
             // Handle Submit
             else if (event.key === 'Enter') {
                 submitCurrentWord();
+                pendingCell = null;
+                pendingTyped = "";
             } 
             // Handle Backspace
             else if (event.key === 'Backspace') {
-                undoLastStep();
+                if (pendingCell) {
+                    // If we backspace while typing "QU", just cancel the pending "Q"
+                    pendingCell = null;
+                    pendingTyped = "";
+                } else {
+                    // Otherwise, undo the last fully selected cell
+                    undoLastStep();
+                }
             }
         });
 
