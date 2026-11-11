@@ -1,3 +1,19 @@
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./fonts/Urbanist-VariableFont_wght.ttf') format('ttf');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/DMSans-Italic-VariableFont_opsz,wght.ttf') format('ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
     font-family: Arial, sans-serif;
     display: flex;
@@ -103,4 +119,28 @@ body {
 
 #word-list-container h3 {
     margin-top: 0;
+}
+
+/* Styling the progress bar container */
+progress {
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+/* Styling the filled portion (Chrome/Safari) */
+progress::-webkit-progress-value {
+    background-color: #4CAF50;
+    border-radius: 10px;
+}
+
+/* Styling the unfilled background (Chrome/Safari) */
+progress::-webkit-progress-bar {
+    background-color: #f3f3f3;
+    border-radius: 10px;
+}
+
+/* Styling the filled portion (Firefox) */
+progress::-moz-progress-bar {
+    background-color: #4CAF50;
+    border-radius: 10px;
 }

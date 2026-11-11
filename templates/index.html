@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Griddle</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='main_stylesheet.css') }}">
-    <style>
-        .grid-container {
-            display: grid;
-            gap: 10px;
-            touch-action: none;
-        }
-    </style>
 </head>
 <body>
     <h2>Click and drag to select!</h2>
 
     <div id="word-display"></div>
     <div id="squares-selected-display"></div>
-    <div id="score-display"><p>Current score: 0</p></div>
+
+    <!-- Score progress bar -->
+    <div id="score-container" style="margin-bottom: 20px;">
+        <p id="score-display" style="text-align: center;">Current score: 0</p>
+        <progress id="score-progress" value="0" max="100" style="width: 200px; height: 20px;"></progress>
+    </div>
 
     <!-- New wrapper to position items side-by-side -->
     <div class="main-content">
@@ -64,6 +62,7 @@
         const wordDisplay = document.getElementById('word-display'); // Grab the word display element
         const squaresSelectedDisplay = document.getElementById('squares-selected-display');
         const scoreDisplay = document.getElementById('score-display');
+        const scoreProgress = document.getElementById('score-progress');
 
         let squaresSelected = 0;
         let currentScore = 0;
@@ -86,13 +85,14 @@
 
         function updateCurrentScoreDisplay () {
             scoreDisplay.textContent = "Current score: " + currentScore;
+            scoreProgress.value = currentScore;
         }
 
-        function calculateScore(word) {
+        function calculateScore(squaresSelected) {
             const baseScore = 4;
             let outputScore = baseScore;
 
-            for (let i = 4; i < word.length; i++) {
+            for (let i = 4; i < squaresSelected; i++) {
                 outputScore += (i - 1);
             }
 
@@ -143,6 +143,7 @@
             if (selectedPath.length === 0) return;
 
             const finalWord = wordDisplay.textContent;
+            const finalSquaresSelected = squaresSelected;
             squaresSelected = 0;
             isDragging = false; // Reset dragging state
 
@@ -170,8 +171,8 @@
                         wordListElement.appendChild(li);
                     });
                     
-                    if (data.valid) {
-                        currentScore += calculateScore(finalWord);
+                    if (data.valid && !data.repeat) {
+                        currentScore += calculateScore(finalSquaresSelected);
                         updateCurrentScoreDisplay();
                     }
                 }

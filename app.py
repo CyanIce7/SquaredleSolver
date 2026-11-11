@@ -59,9 +59,14 @@ def submit_word():
     data = request.get_json()
     word = data.get('word', '').strip()
     is_valid_word = False
+    is_repeat = False
 
+    # Check if the word has been found already
+    if word in stored_words:
+        is_valid_word = True
+        is_repeat = True
     # Store the word if it is longer than 1 letter and not a duplicate
-    if len(word) > 1 and word not in stored_words and find_word(word, trie):
+    elif len(word) > 1 and find_word(word, trie):
         stored_words.append(word)
         is_valid_word = True
 
@@ -71,7 +76,7 @@ def submit_word():
             server_grid[r][c]['active'] = 0
 
     # Send the updated list of words back to JavaScript
-    return jsonify({'status': 'success', 'words': stored_words, 'valid': is_valid_word})
+    return jsonify({'status': 'success', 'words': stored_words, 'valid': is_valid_word, 'repeat': is_repeat})
 
 @app.route('/reset_words', methods=['POST'])
 def reset_words():
