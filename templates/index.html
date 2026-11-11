@@ -113,28 +113,73 @@
             svgLine.setAttribute('points', points.join(' '));
         }
 
+        function undoLastStep() {
+            if (selectedPath.length === 0) return;
+
+            const poppedCell = selectedPath.pop();
+            poppedCell.classList.remove('active');
+            squaresSelected -= 1;
+
+            updateLine();
+            updateWordDisplay();
+            updateSquaresSelectedDisplay();
+
+            fetch('/deactivate_cell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    row: poppedCell.getAttribute('data-row'),
+                    col: poppedCell.getAttribute('data-col')
+                })
+            }).catch(error => console.error('Error:', error));
+        }
+
+        function submitCurrentWord() {
+            if (selectedPath.length === 0) return;
+
+            const finalWord = wordDisplay.textContent;
+            squaresSelected = 0;
+            isDragging = false; // Reset dragging state
+
+            // Clear the UI
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+            selectedPath = [];
+            updateLine();
+            wordDisplay.textContent = '';
+            squaresSelectedDisplay.textContent = '';
+
+            // Send the completed word to the server
+            fetch('/submit_word', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word: finalWord })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const wordListElement = document.getElementById('word-list');
+                    wordListElement.innerHTML = '';
+                    data.words.forEach(w => {
+                        const li = document.createElement('li');
+                        li.textContent = w;
+                        wordListElement.appendChild(li);
+                    });
+                    
+                    if (data.valid) {
+                        currentScore += calculateScore(finalWord);
+                        updateCurrentScoreDisplay();
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
         function handleDrag(cellElement) {
             if (!isDragging) return;
 
-            // 1. Check for backtracking
+            // 1. Check for backtracking using the new helper
             if (selectedPath.length > 1 && cellElement === selectedPath[selectedPath.length - 2]) {
-                const poppedCell = selectedPath.pop();
-                poppedCell.classList.remove('active');
-                squaresSelected -= 1
-
-                updateLine();
-                updateWordDisplay(); // Update the word when backtracking
-                updateSquaresSelectedDisplay();
-
-                fetch('/deactivate_cell', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        row: poppedCell.getAttribute('data-row'),
-                        col: poppedCell.getAttribute('data-col')
-                    })
-                }).catch(error => console.error('Error:', error));
-
+                undoLastStep();
                 return;
             }
 
@@ -187,46 +232,61 @@
         });
 
         // Code to run whenever a word is selected from the grid
+        // Code to run whenever a word is selected from the grid via mouse
         document.addEventListener('mouseup', () => {
             if (isDragging) {
-                isDragging = false;
+                submitCurrentWord();
+            }
+        });
 
-                // Capture the word before clearing the display
-                const finalWord = wordDisplay.textContent;
-                squaresSelected = 0;
+        document.addEventListener('keydown', (event) => {
+            const isAlphabetical = /^[a-zA-Z]+$/.test(event.key);
 
-                // Clear the UI
-                document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-                selectedPath = [];
-                updateLine();
-                wordDisplay.textContent = '';
-                squaresSelectedDisplay.textContent = '';
+            // Handle typing letters
+            if (event.key.length === 1 && isAlphabetical) {
+                const targetLetter = event.key.toLowerCase();
+                let possibleCells = [];
 
-                // Send the completed word to the server
-                fetch('/submit_word', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ word: finalWord })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Completely rebuild the word list based on Python's memory
-                        const wordListElement = document.getElementById('word-list');
-                        wordListElement.innerHTML = '';
-                        data.words.forEach(w => {
-                            const li = document.createElement('li');
-                            li.textContent = w;
-                            wordListElement.appendChild(li);
-                        });
-                        console.log(data.valid);
-                        if (data.valid) {
-                            currentScore += calculateScore(finalWord);
-                            updateCurrentScoreDisplay();
+                // Find all unselected cells that match the typed letter
+                document.querySelectorAll('.cell:not(.active)').forEach(cell => {
+                    // Use startsWith to support multi-letter cells like "QU" when user types "Q"
+                    if (cell.textContent.trim().toLowerCase().startsWith(targetLetter)) {
+                        const r = parseInt(cell.getAttribute('data-row'));
+                        const c = parseInt(cell.getAttribute('data-col'));
+                        
+                        if (selectedPath.length === 0) {
+                            // If starting a new word, any matching cell is valid
+                            possibleCells.push(cell);
+                        } else {
+                            // If continuing a word, only allow adjacent cells
+                            const lastCell = selectedPath[selectedPath.length - 1];
+                            const lastRow = parseInt(lastCell.getAttribute('data-row'));
+                            const lastCol = parseInt(lastCell.getAttribute('data-col'));
+
+                            const rowDiff = Math.abs(r - lastRow);
+                            const colDiff = Math.abs(c - lastCol);
+
+                            if (rowDiff <= 1 && colDiff <= 1) {
+                                possibleCells.push(cell);
+                            }
                         }
                     }
-                })
-                .catch(error => console.error('Error:', error));
+                });
+
+                // If we found a valid cell, activate it
+                if (possibleCells.length > 0) {
+                    isDragging = true; 
+                    handleDrag(possibleCells[0]); // Pass the first valid match to handleDrag
+                }
+                
+            } 
+            // Handle Submit
+            else if (event.key === 'Enter') {
+                submitCurrentWord();
+            } 
+            // Handle Backspace
+            else if (event.key === 'Backspace') {
+                undoLastStep();
             }
         });
 
