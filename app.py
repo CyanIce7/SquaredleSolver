@@ -3,11 +3,12 @@ from solver import SquaredleGraph, generate_trie, find_word
 
 app = Flask(__name__)
 
-grid_size = 3
+SQUAREDLE_GRID = [["t", "a", "v", "n"],
+                  ["n", "d", "r", "i"],
+                  ["g", "a", "i", "i"],
+                  ["m", "u", "qu", "m"]]
 
-SQUAREDLE_GRID = [["u", "t", "s"],
-                  ["d", "h", "e"],
-                  ["r", "o", "n"]]
+grid_size = len(SQUAREDLE_GRID)
 
 server_grid = [
     [{'letter': SQUAREDLE_GRID[i][j], 'active': 0} for j in range(grid_size)]
@@ -57,11 +58,12 @@ def clear_grid():
 def submit_word():
     data = request.get_json()
     word = data.get('word', '').strip()
-    print(word)
+    is_valid_word = False
 
     # Store the word if it is longer than 1 letter and not a duplicate
     if len(word) > 1 and word not in stored_words and find_word(word, trie):
         stored_words.append(word)
+        is_valid_word = True
 
     # Reset all cells to inactive
     for r in range(grid_size):
@@ -69,8 +71,12 @@ def submit_word():
             server_grid[r][c]['active'] = 0
 
     # Send the updated list of words back to JavaScript
-    return jsonify({'status': 'success', 'words': stored_words})
+    return jsonify({'status': 'success', 'words': stored_words, 'valid': is_valid_word})
 
+@app.route('/reset_words', methods=['POST'])
+def reset_words():
+    stored_words.clear() # Empties the Python list
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)

@@ -73,6 +73,7 @@ class Trie:
         letter_index = 0
         key = key.lower()
         for c in key:
+            print(c)
             if c == "?":
                 potential_letters = []
                 for child in curr.children:

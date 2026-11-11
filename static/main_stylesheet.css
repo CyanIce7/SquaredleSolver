@@ -16,7 +16,7 @@ body {
 .grid-container {
     display: grid;
     grid-template-columns: repeat({{ size }}, 60px);
-    gap: 10px; /* Increases the space between rows and columns */
+    gap: 20px; /* Increases the space between rows and columns */
     touch-action: none;
 }
 
