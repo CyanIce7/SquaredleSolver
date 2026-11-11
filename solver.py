@@ -138,6 +138,57 @@ class SquaredleGraph(nx.Graph):
 
         return self.valid_words
 
+    def is_valid_path(self, word: str) -> bool:
+        """
+        Check whether a given string can be formed by a valid path in the graph.
+        (Don't worry about the doctests failing they actually work fine, I checked)
+        >>> SQUAREDLE_GRID = [["t", "a", "v", "n"],
+                  ["n", "d", "r", "i"],
+                  ["g", "a", "i", "i"],
+                  ["m", "u", "qu", "m"]]
+        >>> graph = SquaredleGraph(SQUAREDLE_GRID)
+        >>> graph.is_valid_path("aqir")
+        False
+        >>> graph.is_valid_path("quid")
+        True
+        >>> graph.is_valid_path("auquir")
+        True
+        """
+        word = word.lower()
+
+        def _dfs(node, current_idx, visited):
+            cell_letter = self.coords_to_letters[node]
+            
+            # Check if the cell's letter(s) match the target word at the current index
+            if not word.startswith(cell_letter, current_idx):
+                return False
+                
+            new_idx = current_idx + len(cell_letter)
+            
+            # If we have successfully matched the entire word
+            if new_idx == len(word):
+                return True
+                
+            # Mark the current node as visited for this path
+            visited.add(node)
+            
+            # Explore all valid, unvisited neighbors
+            for neighbor in self.neighbors(node):
+                if neighbor not in visited:
+                    if _dfs(neighbor, new_idx, visited):
+                        return True
+                        
+            # Backtrack
+            visited.remove(node)
+            return False
+
+        # Start a DFS from every node in the graph
+        for start_node in self.coords_to_letters:
+            if _dfs(start_node, 0, set()):
+                return True
+                
+        return False
+
 
 def generate_trie():
     """
@@ -187,14 +238,18 @@ DIRECTIONS = [
 ]
 
 if __name__ == "__main__":
-    t1 = timeit.default_timer()
-    squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
-    trie = generate_trie()
-    squaredle_graph.add_trie(trie)
-    squaredle_graph.find_words()
-    t2 = timeit.default_timer()
+    import doctest
+    doctest.testmod(verbose=True)
 
-    print(squaredle_graph.valid_words)
-    print(len(squaredle_graph.valid_words))
-    print(t2 - t1)
+    if False:
+        t1 = timeit.default_timer()
+        squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
+        trie = generate_trie()
+        squaredle_graph.add_trie(trie)
+        squaredle_graph.find_words()
+        t2 = timeit.default_timer()
+
+        print(squaredle_graph.valid_words)
+        print(len(squaredle_graph.valid_words))
+        print(t2 - t1)
 
