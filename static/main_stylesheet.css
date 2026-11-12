@@ -121,16 +121,12 @@ body {
     margin-top: 0;
 }
 
-/* Styling the progress bar container */
+/* Base styling for the progress bar */
 progress {
     border-radius: 10px;
     border: 1px solid #ccc;
-}
-
-/* Styling the filled portion (Chrome/Safari) */
-progress::-webkit-progress-value {
-    background-color: #4CAF50;
-    border-radius: 10px;
+    /* Set a default starting color variable (Red) */
+    --progress-color: hsl(0, 100%, 50%); 
 }
 
 /* Styling the unfilled background (Chrome/Safari) */
@@ -139,8 +135,16 @@ progress::-webkit-progress-bar {
     border-radius: 10px;
 }
 
-/* Styling the filled portion (Firefox) */
-progress::-moz-progress-bar {
-    background-color: #4CAF50;
-    border-radius: 10px;
+/* Apply the variable to the filled portion (Chrome/Safari) */
+progress::-webkit-progress-value { 
+    background-color: var(--progress-color); 
+    border-radius: 10px; 
+    transition: background-color 0.4s ease, width 0.4s ease;
+}
+
+/* Apply the variable to the filled portion (Firefox) */
+progress::-moz-progress-bar { 
+    background-color: var(--progress-color); 
+    border-radius: 10px; 
+    transition: background-color 0.4s ease, width 0.4s ease;
 }

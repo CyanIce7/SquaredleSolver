@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from solver import SquaredleGraph, generate_trie, find_word
+import json
 
 app = Flask(__name__)
 
@@ -70,6 +71,8 @@ def submit_word():
         stored_words.append(word)
         is_valid_word = True
 
+    app.logger.info(f"my_var value: {stored_words}")
+
     # Reset all cells to inactive
     for r in range(grid_size):
         for c in range(grid_size):
@@ -80,7 +83,8 @@ def submit_word():
 
 @app.route('/reset_words', methods=['POST'])
 def reset_words():
-    stored_words.clear() # Empties the Python list
+    stored_words.clear()
+    app.logger.info(f"my_var value: {stored_words}")
     return jsonify({'status': 'success'})
 
 if __name__ == '__main__':

@@ -83,9 +83,18 @@
             squaresSelectedDisplay.textContent = "Squares selected: " + squaresSelected;
         }
 
-        function updateCurrentScoreDisplay () {
+        function updateCurrentScoreDisplay() {
             scoreDisplay.textContent = "Current score: " + currentScore;
             scoreProgress.value = currentScore;
+            const maxHue = 120
+            
+            // Get the max score (fallback to 100 if not set)
+            const maxScore = scoreProgress.max || 100;
+            
+            const hue = Math.min(currentScore, maxScore) / maxScore * maxHue;
+            
+            // Inject the calculated HSL color directly into the progress bar's CSS variable
+            scoreProgress.style.setProperty('--progress-color', `hsl(${hue}, 100%, 50%)`);
         }
 
         function calculateScore(squaresSelected) {
@@ -332,9 +341,12 @@
             }
         });
 
-        document.getElementById('reset-words-btn').addEventListener('click', () => {
+        document.getElementById('reset-words-btn').addEventListener('click', (event) => {
+            event.preventDefault(); // 1. Prevent the browser from refreshing the page
+
             fetch('/reset_words', {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' } // 2. Tell Flask to accept this safely
             })
             .then(response => response.json())
             .then(data => {
@@ -342,12 +354,14 @@
                     // Clear the words from the webpage visually
                     document.getElementById('word-list').innerHTML = '';
 
-                    // Update score if the word is a valid word
+                    // Update score to 0
                     currentScore = 0;
                     updateCurrentScoreDisplay();
                 }
             })
             .catch(error => console.error('Error:', error));
+
+            event.currentTarget.blur()
         });
     </script>
 </body>
