@@ -67,9 +67,8 @@
         let squaresSelected = 0;
         let currentScore = 0;
 
-        // Used when using keyboard to input for multi-letter cells
-        let pendingCell = null;
-        let pendingTyped = "";
+        // Tracks the current word typed via keyboard
+        let typedBuffer = "";
 
 
         // New helper function to update the text on the screen
@@ -154,7 +153,8 @@
             const finalWord = wordDisplay.textContent;
             const finalSquaresSelected = squaresSelected;
             squaresSelected = 0;
-            isDragging = false; // Reset dragging state
+            isDragging = false;
+            typedBuffer = "";
 
             // Clear the UI
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
@@ -237,6 +237,7 @@
             cell.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 isDragging = true;
+                typedBuffer = ""; // Clear any keyboard buffer
                 selectedPath = [];
                 handleDrag(cell);
             });
@@ -254,88 +255,96 @@
             }
         });
 
-        document.addEventListener('keydown', (event) => {
-            const isAlphabetical = /^[a-zA-Z]+$/.test(event.key);
+        // Finds all valid grid paths matching the typed string (including partial multi-letter tiles like "Q" -> "QU")
+        function findValidKeyboardPaths(targetStr) {
+            if (!targetStr) return [];
 
-            // Handle typing letters
-            if (event.key.length === 1 && isAlphabetical) {
-                const targetLetter = event.key.toLowerCase();
+            const cells = Array.from(document.querySelectorAll('.cell')).map(el => ({
+                el,
+                row: parseInt(el.getAttribute('data-row')),
+                col: parseInt(el.getAttribute('data-col')),
+                text: el.textContent.trim().toLowerCase()
+            }));
 
-                // 1. If we are currently in the middle of typing a multi-letter cell
-                if (pendingCell) {
-                    const cellText = pendingCell.textContent.trim().toLowerCase();
-                    const newTyped = pendingTyped + targetLetter;
+            const results = [];
 
-                    if (cellText === newTyped) {
-                        // The user finished typing the multi-letter cell -> activate it
-                        isDragging = true;
-                        handleDrag(pendingCell);
-                        pendingCell = null;
-                        pendingTyped = "";
-                    } else if (cellText.startsWith(newTyped)) {
-                        // The user typed a correct letter, but the cell is even longer (e.g., 3+ letters)
-                        pendingTyped = newTyped;
-                    } else {
-                        // The user typed the wrong next letter -> cancel the pending selection
-                        pendingCell = null;
-                        pendingTyped = "";
+            function dfs(currentCell, currentStr, path, visited) {
+                const nextStr = currentStr + currentCell.text;
+
+                if (targetStr.startsWith(nextStr)) {
+                    const nextPath = [...path, currentCell.el];
+
+                    // Full match for all tiles typed so far
+                    if (nextStr.length === targetStr.length) {
+                        results.push({ completedCells: nextPath, isPartial: false });
+                        return;
                     }
-                    return; // Stop evaluating this keystroke
-                }
 
-                // 2. Normal matching logic (searching for a new cell)
-                let possibleCells = [];
-
-                document.querySelectorAll('.cell:not(.active)').forEach(cell => {
-                    if (cell.textContent.trim().toLowerCase().startsWith(targetLetter)) {
-                        const r = parseInt(cell.getAttribute('data-row'));
-                        const c = parseInt(cell.getAttribute('data-col'));
-                        
-                        if (selectedPath.length === 0) {
-                            possibleCells.push(cell);
-                        } else {
-                            const lastCell = selectedPath[selectedPath.length - 1];
-                            const lastRow = parseInt(lastCell.getAttribute('data-row'));
-                            const lastCol = parseInt(lastCell.getAttribute('data-col'));
-
-                            if (Math.abs(r - lastRow) <= 1 && Math.abs(c - lastCol) <= 1) {
-                                possibleCells.push(cell);
-                            }
+                    // Continue exploring unvisited adjacent neighbors
+                    visited.add(currentCell.el);
+                    for (const neighbor of cells) {
+                        if (!visited.has(neighbor.el) &&
+                            Math.abs(neighbor.row - currentCell.row) <= 1 &&
+                            Math.abs(neighbor.col - currentCell.col) <= 1) {
+                            dfs(neighbor, nextStr, nextPath, visited);
                         }
                     }
-                });
-
-                // 3. Process the first valid match found
-                if (possibleCells.length > 0) {
-                    const chosenCell = possibleCells[0];
-                    const cellText = chosenCell.textContent.trim().toLowerCase();
-
-                    if (cellText === targetLetter) {
-                        // Exact match for a standard single-letter cell
-                        isDragging = true; 
-                        handleDrag(chosenCell); 
-                    } else {
-                        // Partial match for a multi-letter cell -> put it in pending mode
-                        pendingCell = chosenCell;
-                        pendingTyped = targetLetter;
-                    }
+                    visited.delete(currentCell.el);
+                } 
+                // Partial match on a multi-letter tile (e.g., typed "q" on a "qu" tile)
+                else if (nextStr.startsWith(targetStr)) {
+                    results.push({ completedCells: [...path], isPartial: true });
                 }
-                
+            }
+
+            for (const startCell of cells) {
+                dfs(startCell, "", [], new Set());
+            }
+
+            // Prioritize complete tile matches over partial multi-letter matches
+            results.sort((a, b) => Number(a.isPartial) - Number(b.isPartial));
+            return results;
+        }
+
+        // Updates the grid UI to display the best surviving path
+        function renderKeyboardPath(cells) {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+            selectedPath = cells;
+            squaresSelected = cells.length;
+
+            cells.forEach(c => c.classList.add('active'));
+            updateLine();
+            updateWordDisplay();
+            updateSquaresSelectedDisplay();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const isAlphabetical = /^[a-zA-Z]$/.test(event.key);
+
+            if (isAlphabetical) {
+                isDragging = false;
+                const candidateBuffer = typedBuffer + event.key.toLowerCase();
+                const validPaths = findValidKeyboardPaths(candidateBuffer);
+
+                // Only accept the keystroke if at least one valid path exists on the board
+                if (validPaths.length > 0) {
+                    typedBuffer = candidateBuffer;
+                    renderKeyboardPath(validPaths[0].completedCells);
+                }
             } 
-            // Handle Submit
             else if (event.key === 'Enter') {
                 submitCurrentWord();
-                pendingCell = null;
-                pendingTyped = "";
             } 
-            // Handle Backspace
             else if (event.key === 'Backspace') {
-                if (pendingCell) {
-                    // If we backspace while typing "QU", just cancel the pending "Q"
-                    pendingCell = null;
-                    pendingTyped = "";
+                if (typedBuffer.length > 0) {
+                    typedBuffer = typedBuffer.slice(0, -1);
+                    if (typedBuffer.length === 0) {
+                        renderKeyboardPath([]);
+                    } else {
+                        const validPaths = findValidKeyboardPaths(typedBuffer);
+                        renderKeyboardPath(validPaths.length > 0 ? validPaths[0].completedCells : []);
+                    }
                 } else {
-                    // Otherwise, undo the last fully selected cell
                     undoLastStep();
                 }
             }
