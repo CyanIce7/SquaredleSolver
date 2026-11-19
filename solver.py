@@ -23,7 +23,7 @@ class SquaredleGraph(nx.Graph):
     def __init__(self, grid):
         super().__init__()
         self.coords_to_letters = {}
-        self.valid_words = []
+        self.valid_words = set()
         self.recursive_searches = 0
         self._missing_nodes = set()
 
@@ -89,16 +89,16 @@ class SquaredleGraph(nx.Graph):
                 # Wildcard search (search for every character)
                 for c in "abcdefghijklmnopqrstuvwxyz":
                     if self.trie.search(curr_string[:-1] + c):
-                        self.valid_words.append(curr_string[:-1] + c)
+                        self.valid_words.add(curr_string[:-1] + c)
             elif "*" in curr_string:
                 asterisk_index = curr_string.index("*")
                 for c in curr_string[(asterisk_index + 1):]:
                     if self.trie.search(curr_string[0:asterisk_index] + c):
-                        self.valid_words.append(curr_string[0:asterisk_index] + c)
+                        self.valid_words.add(curr_string[0:asterisk_index] + c)
             else:
                 # Regular character search?
                 if self.trie.search(curr_string):
-                    self.valid_words.append(curr_string)
+                    self.valid_words.add(curr_string)
 
         if "*" in curr_string:
             asterisk_index = curr_string.index("*")
@@ -125,16 +125,12 @@ class SquaredleGraph(nx.Graph):
         else:
             visited.remove(node)
 
-    def find_words(self, sort: bool = True) -> list[str]:
+    def find_words(self) -> set[str]:
         """
         Find all words in this squaredle.
         """
         for k in self.coords_to_letters:
             self._find_words_starting_with_letter(k)
-        self.valid_words = list(set(self.valid_words))
-
-        if sort:
-            self.valid_words.sort()
 
         return self.valid_words
 

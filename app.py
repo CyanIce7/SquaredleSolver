@@ -16,6 +16,7 @@ server_grid = [
     for i in range(grid_size)
 ]
 
+valid_words = set()
 stored_words = []
 
 @app.route('/')
@@ -58,7 +59,7 @@ def clear_grid():
 @app.route('/submit_word', methods=['POST'])
 def submit_word():
     data = request.get_json()
-    word = data.get('word', '').strip()
+    word = data.get('word', '').strip().lower()
     is_valid_word = False
     is_repeat = False
 
@@ -67,9 +68,10 @@ def submit_word():
         is_valid_word = True
         is_repeat = True
     # Store the word if it is longer than 1 letter and not a duplicate
-    elif len(word) > 1 and find_word(word, trie):
+    elif len(word) > 1 and (word in valid_words):
         stored_words.append(word)
         is_valid_word = True
+    print(valid_words, word)
 
     app.logger.info(f"my_var value: {stored_words}")
 
@@ -90,4 +92,7 @@ def reset_words():
 if __name__ == '__main__':
     squaredle_graph = SquaredleGraph(SQUAREDLE_GRID)
     trie = generate_trie()
+    squaredle_graph.add_trie(trie)
+    valid_words = squaredle_graph.find_words()
+
     app.run(debug=True)
