@@ -5099,12 +5099,6 @@ bisque
 bistro
 bistros
 bit
-bitch
-bitched
-bitches
-bitchiness
-bitching
-bitchy
 bite
 biter
 biters
@@ -6711,9 +6705,6 @@ bullocks
 bullpen
 bullring
 bulls
-bullshit
-bullshitted
-bullshitting
 bullwhip
 bully
 bullying
@@ -8638,7 +8629,6 @@ chicken
 chickened
 chickenpox
 chickens
-chickenshit
 chickpea
 chickpeas
 chicks
@@ -21743,13 +21733,6 @@ fryers
 frying
 fuchsia
 fuchsias
-fuck
-fucked
-fucker
-fuckers
-fuckhead
-fucking
-fucks
 fuddle
 fudge
 fudged
@@ -25527,7 +25510,6 @@ horseplay
 horsepower
 horseradish
 horses
-horseshit
 horseshoe
 horseshoeing
 horseshoes
@@ -29275,7 +29257,6 @@ kidneys
 kids
 kidskin
 kielbasa
-kike
 kill
 killdeer
 killed
@@ -34995,8 +34976,6 @@ nieces
 nifedipine
 nifty
 niggardly
-nigger
-niggers
 niggle
 niggles
 niggling
@@ -48029,15 +48008,6 @@ shirts
 shirtsleeves
 shirttail
 shirtwaist
-shit
-shitfaced
-shithead
-shitheads
-shitload
-shits
-shittiest
-shitting
-shitty
 shiv
 shiver
 shivered
@@ -49814,7 +49784,6 @@ sonic
 sonnet
 sonnets
 sonny
-sonofabitch
 sonogram
 sonograms
 sonority
